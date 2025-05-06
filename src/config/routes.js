@@ -1,16 +1,23 @@
-const express = require("express");
-const router = express.Router();
-const controller = require("../api/billingCycle/billingCycleController");
-
-// Rotas CRUD
-router.get("/billingCycles", controller.getAll);
-router.post("/billingCycles", controller.create);
-router.put("/billingCycles/:id", controller.update);
-router.delete("/billingCycles/:id", controller.delete);
-
-router.get('/billingCycles/count', controller.count);
-router.get('/billingCycles/summary', controller.getSummary);
-
-module.exports = router;
+const express = require('express')
+const auth = require('./auth')
 
 
+module.exports = function(server) {
+  /*
+  * Rotas protegidas por Token JWT
+  */
+  const protectedApi = express.Router()
+  server.use('/api', protectedApi)
+  protectedApi.use(auth)
+  const BillingCycle = require('../api/billingCycle/billingCycleService')
+  BillingCycle.register(protectedApi, '/billingCycles')
+  /*
+  * Rotas abertas
+  */
+  const openApi = express.Router()
+  server.use('/oapi', openApi)
+  const AuthService = require('../api/user/authService')
+  openApi.post('/login', AuthService.login)
+  openApi.post('/signup', AuthService.signup)
+  openApi.post('/validateToken', AuthService.validateToken)
+}
